@@ -30,8 +30,45 @@ def validate(
     """Run structural checks needed before any stats are computed.
 
     Raises no exceptions on data issues — issues are collected into the
-    report so the caller (human or agent) decides how to proceed.
+    report so the caller (human or agent) decides how to proceed. Type and
+    argument-shape problems (missing columns, wrong types) are still raised
+    immediately, since no meaningful report can be built without them.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw experiment dataframe to validate.
+    group_col : str
+        Name of the column holding the experiment group/variant label.
+    metric_col : str
+        Name of the column holding the metric values.
+    id_col : str or None, optional
+        Name of a unique-entity id column (e.g. user id), used to detect
+        duplicated entities instead of fully duplicated rows. Default is None.
+
+    Returns
+    -------
+    ValidationReport
+        Dataclass with row/dtype/null/duplicate/cardinality summaries and a
+        list of human-readable `issues`. `is_clean` is True iff `issues` is empty.
+
+    Raises
+    ------
+    TypeError
+        If `df` is not a pandas DataFrame, or `group_col`/`metric_col`/`id_col`
+        is not a str (or None for `id_col`).
+    KeyError
+        If `group_col`, `metric_col`, or `id_col` is not a column of `df`.
     """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"df must be a pandas DataFrame, got {type(df).__name__}")
+    if not isinstance(group_col, str):
+        raise TypeError(f"group_col must be a str, got {type(group_col).__name__}")
+    if not isinstance(metric_col, str):
+        raise TypeError(f"metric_col must be a str, got {type(metric_col).__name__}")
+    if id_col is not None and not isinstance(id_col, str):
+        raise TypeError(f"id_col must be a str or None, got {type(id_col).__name__}")
+
     for col in (group_col, metric_col):
         if col not in df.columns:
             raise KeyError(f"column {col!r} not found in dataframe")

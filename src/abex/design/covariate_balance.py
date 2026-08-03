@@ -27,9 +27,55 @@ def check_covariate_balance(
     group_col: str,
     smd_threshold: float = 0.1,
 ) -> CovariateBalanceResult:
-    """Two-group only. SMD (Cohen's d on the covariate) is the primary signal —
+    """Check pre-treatment covariate balance between exactly two groups.
+
+    Two-group only. SMD (Cohen's d on the covariate) is the primary signal —
     p-value is supplementary and gets noisy at large n.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Experiment dataframe containing `covariate_col` and `group_col`.
+    covariate_col : str
+        Name of the pre-treatment covariate column to check.
+    group_col : str
+        Name of the column holding the experiment group/variant label.
+        Must have exactly 2 distinct non-null values.
+    smd_threshold : float, default 0.1
+        Absolute standardized-mean-difference threshold above which the
+        covariate is flagged as imbalanced. Must be non-negative.
+
+    Returns
+    -------
+    CovariateBalanceResult
+        Group means, standardized mean difference, Welch t-test p-value, and
+        `is_balanced` (True if `abs(smd) < smd_threshold`).
+
+    Raises
+    ------
+    TypeError
+        If `df` is not a pandas DataFrame, `covariate_col`/`group_col` is not
+        a str, or `smd_threshold` is not a number.
+    KeyError
+        If `covariate_col` or `group_col` is not a column of `df`.
+    ValueError
+        If `group_col` does not have exactly 2 distinct non-null values, or
+        `smd_threshold` is negative.
     """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"df must be a pandas DataFrame, got {type(df).__name__}")
+    if not isinstance(covariate_col, str):
+        raise TypeError(f"covariate_col must be a str, got {type(covariate_col).__name__}")
+    if not isinstance(group_col, str):
+        raise TypeError(f"group_col must be a str, got {type(group_col).__name__}")
+    if not isinstance(smd_threshold, (int, float)) or isinstance(smd_threshold, bool):
+        raise TypeError(f"smd_threshold must be a number, got {type(smd_threshold).__name__}")
+    if smd_threshold < 0:
+        raise ValueError("smd_threshold must be non-negative")
+    for col in (covariate_col, group_col):
+        if col not in df.columns:
+            raise KeyError(f"column {col!r} not found in dataframe")
+
     groups = df[group_col].dropna().unique()
     if len(groups) != 2:
         raise ValueError(f"covariate_balance check expects exactly 2 groups, got {len(groups)}")

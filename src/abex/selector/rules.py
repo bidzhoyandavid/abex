@@ -23,6 +23,21 @@ class Candidate:
 
 
 def _group_count_ok(profile: MetricProfile, spec: MethodSpec) -> bool:
+    """Check whether a profile's group count satisfies a method's requirements.
+
+    Parameters
+    ----------
+    profile : MetricProfile
+        Profile whose `n_groups` is checked.
+    spec : MethodSpec
+        Method spec providing `min_n_groups`/`max_n_groups` bounds.
+
+    Returns
+    -------
+    bool
+        True if `spec.min_n_groups <= profile.n_groups <= spec.max_n_groups`
+        (no upper bound if `spec.max_n_groups` is None).
+    """
     if profile.n_groups < spec.min_n_groups:
         return False
     if spec.max_n_groups is not None and profile.n_groups > spec.max_n_groups:
@@ -33,7 +48,31 @@ def _group_count_ok(profile: MetricProfile, spec: MethodSpec) -> bool:
 def candidates_for(profile: MetricProfile, paired: bool = False) -> list[Candidate]:
     """Return every method whose hard requirements (kind, group count, sample
     size, pairing) are satisfied, each annotated with soft warnings.
+
+    Parameters
+    ----------
+    profile : MetricProfile
+        Metric profile produced by `abex.data.profiling.profile_metric`.
+    paired : bool, default False
+        Whether the data is paired/matched (e.g. pre/post on the same units).
+        Only methods with a matching `MethodSpec.requires_paired` are returned.
+
+    Returns
+    -------
+    list[Candidate]
+        Candidates sorted best-first: fewer violated assumptions first, then
+        fewer soft warnings. Empty if no registered method fits.
+
+    Raises
+    ------
+    TypeError
+        If `profile` is not a `MetricProfile`, or `paired` is not a bool.
     """
+    if not isinstance(profile, MetricProfile):
+        raise TypeError(f"profile must be a MetricProfile, got {type(profile).__name__}")
+    if not isinstance(paired, bool):
+        raise TypeError(f"paired must be a bool, got {type(paired).__name__}")
+
     out: list[Candidate] = []
 
     for spec in REGISTRY.values():

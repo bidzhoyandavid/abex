@@ -18,9 +18,29 @@ class Recommendation:
 
 
 def recommend_test(profile: MetricProfile, paired: bool = False) -> list[Recommendation]:
-    """Returns candidates ranked best-first. Empty list means no registered
+    """Rank registered test methods for a given metric profile.
+
+    Returns candidates ranked best-first. Empty list means no registered
     method fits this profile — most likely need one of the stubbed methods
     (bayesian/sequential/cuped/ratio) that aren't wired into the registry yet.
+
+    Parameters
+    ----------
+    profile : MetricProfile
+        Metric profile produced by `abex.data.profiling.profile_metric`.
+    paired : bool, default False
+        Whether the data is paired/matched (e.g. pre/post on the same units).
+
+    Returns
+    -------
+    list[Recommendation]
+        Best-first ranked recommendations, each with the method name, rank,
+        warnings, violated assumptions, and importable `fn_path`.
+
+    Raises
+    ------
+    TypeError
+        If `profile` is not a `MetricProfile`, or `paired` is not a bool.
     """
     candidates: list[Candidate] = candidates_for(profile, paired=paired)
 

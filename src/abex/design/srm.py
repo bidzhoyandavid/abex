@@ -24,9 +24,46 @@ def check_srm(
     expected_ratios: dict[str, float] | None = None,
     alpha: float = 0.001,
 ) -> SRMResult:
-    """SRM is checked at a strict alpha (default 0.001) — false positives here
+    """Chi-square goodness-of-fit test for sample ratio mismatch.
+
+    SRM is checked at a strict alpha (default 0.001) — false positives here
     invalidate the whole experiment, so the bar is higher than for the metric test.
+
+    Parameters
+    ----------
+    group_counts : dict[str, int] or pd.Series
+        Observed unit counts per group.
+    expected_ratios : dict[str, float] or None, optional
+        Expected allocation ratio per group; keys must match `group_counts`
+        and values must sum to 1. None assumes an equal split across all
+        groups. Default is None.
+    alpha : float, default 0.001
+        Significance level for flagging SRM. Must be in `(0, 1)`.
+
+    Returns
+    -------
+    SRMResult
+        Observed/expected counts, chi-square statistic, p-value, and
+        `has_srm` (True if `p_value < alpha`).
+
+    Raises
+    ------
+    TypeError
+        If `group_counts` is not a dict or pandas Series, `expected_ratios`
+        is not a dict or None, or `alpha` is not a number.
+    ValueError
+        If fewer than 2 groups are given, `expected_ratios` doesn't sum to 1,
+        its keys don't match `group_counts`, or `alpha` is not in `(0, 1)`.
     """
+    if not isinstance(group_counts, (dict, pd.Series)):
+        raise TypeError(f"group_counts must be a dict or pandas Series, got {type(group_counts).__name__}")
+    if expected_ratios is not None and not isinstance(expected_ratios, dict):
+        raise TypeError(f"expected_ratios must be a dict or None, got {type(expected_ratios).__name__}")
+    if not isinstance(alpha, (int, float)) or isinstance(alpha, bool):
+        raise TypeError(f"alpha must be a number, got {type(alpha).__name__}")
+    if not (0 < alpha < 1):
+        raise ValueError("alpha must be in (0, 1)")
+
     if isinstance(group_counts, pd.Series):
         group_counts = {str(k): int(v) for k, v in group_counts.to_dict().items()}
 
