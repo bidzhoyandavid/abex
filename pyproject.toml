@@ -1,0 +1,28 @@
+[project]
+name = "abex"
+version = "0.1.0"
+description = "Library for analyzing A/B test results"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+polars = ["polars>=0.20"]
+viz = ["plotly>=5.18"]
+dev = ["pytest>=8.0", "pre-commit>=3.6", "ruff>=0.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
